@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; 
+import { useState } from 'react';
+import { motion } from 'framer-motion'; 
 import { 
   Check, 
   ArrowLeft, 
@@ -11,7 +11,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase'; 
+import { supabase } from '../lib/supabase'; // Ensure this points to your Supabase client file
 
 export default function AgentApply() {
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -25,32 +25,33 @@ export default function AgentApply() {
     const data = Object.fromEntries(formData);
 
     try {
-      // 1. Direct Insert into your truscan_partner_applications table
+      // 1. DIRECT INSERT (This replaces the broken /api call)
       const { error } = await supabase
         .from('truscan_partner_applications') 
         .insert([
           { 
-            name: data.name,      // Matches schema
-            email: data.email,    // Matches schema
-            whatsapp: data.whatsapp, // Matches schema
-            experience: data.experience, // Matches schema
-            status: 'pending'     // Matches schema default
+            name: data.name,
+            email: data.email,
+            whatsapp: data.whatsapp,
+            experience: data.experience,
+            status: 'pending'
           }
         ]);
 
       if (error) throw error;
 
-      // 2. Trigger the Success UI
+      // 2. TRIGGER SUCCESS UI
       setFormStatus('success');
       
     } catch (err: any) {
       console.error('Submission error:', err);
-      setErrorMessage(err.message || 'Something went wrong. Please try again.');
+      // This will catch RLS (permission) errors or missing column errors
+      setErrorMessage(err.message || 'Submission failed. Please try again.');
       setFormStatus('error');
     }
   };
 
-  // SUCCESS STATE UI
+  // SUCCESS VIEW
   if (formStatus === 'success') {
     return (
       <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6">
@@ -66,30 +67,25 @@ export default function AgentApply() {
           <p className="text-brand-muted mb-8 leading-relaxed">
             Thank you for applying to the TruScan Partner Program. Our team will review your application and reach out via WhatsApp within 24-48 hours.
           </p>
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-brand-blue-light font-bold hover:gap-3 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
+          <Link to="/" className="inline-flex items-center gap-2 text-brand-blue-light font-bold hover:gap-3 transition-all">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
           </Link>
         </motion.div>
       </div>
     );
   }
 
+  // FORM VIEW
   return (
-    <div className="min-h-screen bg-brand-bg font-sans text-brand-text selection:bg-brand-blue/20">
+    <div className="min-h-screen bg-brand-bg font-sans text-brand-text">
       <nav className="relative z-10 p-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-2 group">
+          <Link to="/" className="flex items-baseline gap-2">
             <span className="text-2xl font-black tracking-tighter font-display">
-              <span className="text-blue-500">TRU</span>
-              <span className="text-brand-wa">SCAN</span>
+              <span className="text-blue-500">TRU</span><span className="text-brand-wa">SCAN</span>
             </span>
-            <span className="text-[10px] font-bold text-brand-muted tracking-widest uppercase ml-1">Systems</span>
           </Link>
-          <Link to="/" className="text-xs font-bold uppercase tracking-widest text-brand-muted hover:text-brand-text transition-colors flex items-center gap-2">
+          <Link to="/" className="text-xs font-bold uppercase tracking-widest text-brand-muted flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
@@ -97,68 +93,45 @@ export default function AgentApply() {
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-20 items-start">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/10 border border-brand-blue/20 text-brand-blue-light text-[10px] font-bold uppercase tracking-[0.2em] mb-8">
-            <Users className="w-3 h-3" /> Partner Program
-          </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter font-display mb-6 leading-[1.1]">
-            Join the <br /> <span className="text-brand-blue-light">Automation</span> <br /> Revolution.
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter font-display mb-6">
+            Join the <span className="text-brand-blue-light">Automation</span> Revolution.
           </h1>
-          <p className="text-lg text-brand-muted mb-12 leading-relaxed max-w-lg">
-            TruScan partners help businesses unlock efficiency through bespoke WhatsApp automation.
-          </p>
+          <p className="text-lg text-brand-muted mb-12">Become a partner and earn recurring commissions.</p>
           <div className="space-y-8">
             {[
               { icon: Zap, title: "High Commissions", desc: "Earn recurring commission on every client." },
-              { icon: Shield, title: "Full Support", desc: "We handle the technical build and maintenance." },
-              { icon: Globe, title: "Expanding Market", desc: "South African businesses are rapidly adopting automation." }
+              { icon: Shield, title: "Full Support", desc: "We handle the technical build and maintenance." }
             ].map((benefit, i) => (
               <div key={i} className="flex gap-6 items-start">
                 <div className="w-12 h-12 bg-brand-surface border border-brand-border rounded-2xl flex items-center justify-center text-brand-blue-light">
                   <benefit.icon className="w-6 h-6" />
                 </div>
-                <div>
-                  <h4 className="font-bold mb-1">{benefit.title}</h4>
-                  <p className="text-sm text-brand-muted">{benefit.desc}</p>
-                </div>
+                <div><h4 className="font-bold">{benefit.title}</h4><p className="text-sm text-brand-muted">{benefit.desc}</p></div>
               </div>
             ))}
           </div>
         </div>
 
-        <motion.div className="bg-brand-surface border border-brand-border p-10 rounded-[2.5rem] shadow-2xl relative">
-          <h2 className="text-2xl font-black tracking-tighter font-display mb-8">Partner Application</h2>
+        <motion.div className="bg-brand-surface border border-brand-border p-10 rounded-[2.5rem] shadow-2xl">
+          <h2 className="text-2xl font-black tracking-tighter mb-8">Partner Application</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-brand-muted">Full Name</label>
-                <input required name="name" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm focus:border-brand-blue outline-none" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-brand-muted">Email</label>
-                <input required name="email" type="email" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm focus:border-brand-blue outline-none" />
-              </div>
+              <input required name="name" placeholder="Full Name" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm outline-none" />
+              <input required name="email" type="email" placeholder="Email" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm outline-none" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-brand-muted">WhatsApp Number</label>
-              <input required name="whatsapp" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm focus:border-brand-wa outline-none" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-brand-muted">Experience</label>
-              <textarea required name="experience" rows={4} className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm focus:border-brand-blue outline-none resize-none" />
-            </div>
+            <input required name="whatsapp" placeholder="WhatsApp Number" className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm outline-none" />
+            <textarea required name="experience" placeholder="Tell us about your background..." rows={4} className="w-full bg-brand-bg border border-brand-border rounded-2xl px-6 py-4 text-sm outline-none resize-none" />
 
             {formStatus === 'error' && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold">
-                {errorMessage}
-              </div>
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold">{errorMessage}</div>
             )}
 
             <button 
               type="submit" 
               disabled={formStatus === 'submitting'} 
-              className="w-full bg-brand-blue text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-brand-blue-light transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full bg-brand-blue text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-brand-blue-light transition-all disabled:opacity-50"
             >
-              {formStatus === 'submitting' ? "Processing..." : <>Submit Application <ChevronRight className="w-4 h-4" /></>}
+              {formStatus === 'submitting' ? "Processing..." : "Submit Application"}
             </button>
           </form>
         </motion.div>
