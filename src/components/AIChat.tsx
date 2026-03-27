@@ -32,24 +32,23 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      // The 2026 Unified SDK Client
       const ai = new GoogleGenAI({ apiKey: "AIzaSyAYomPCtn47LPEchu068E2j4YQk983sN2o" });
 
-      // NEW SYNTAX: stateless call to models.generateContent
+      // Updated to gemini-2.0-flash to resolve the 404 error
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash", 
         contents: [{ 
           role: 'user', 
           parts: [{ text: `${SYSTEM_INSTRUCTION}\n\nUser Question: ${userMessage}` }] 
         }]
       });
 
-      // NEW ACCESSOR: text is a property, not a function
       const botResponse = response.text || "I'm sorry, I couldn't process that.";
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
-      setMessages(prev => [...prev, { role: 'bot', content: `Error connecting to brain: ${error.message}` }]);
+      // Detailed error message to pinpoint any remaining 404 or auth issues
+      setMessages(prev => [...prev, { role: 'bot', content: `Brain Error: ${error.message}` }]);
     } finally {
       setIsLoading(false);
     }
