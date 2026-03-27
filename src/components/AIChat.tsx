@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
-// This matches your package.json exactly
+// Correct import for the package in your package.json
 import { GoogleGenAI } from "@google/genai";
 
 const WhatsAppIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -40,26 +40,21 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      // THE KEY: Hardcoded as requested to bypass Vercel env issues
-      const apiKey = "AIzaSyAYomPCtn47LPEchu068E2j4YQk983sN2o";
+      // 1. Initialize the new Client object correctly for @google/genai
+      const ai = new GoogleGenAI({ apiKey: "AIzaSyAYomPCtn47LPEchu068E2j4YQk983sN2o" });
 
-      // INITIALIZATION FOR @google/genai (This is the specific syntax for your library)
-      const ai = new GoogleGenAI({ apiKey });
-      
+      // 2. Call generateContent using the stateless models object
       const response = await ai.models.generateContent({
         model: "gemini-1.5-flash",
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-        config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-            temperature: 0.7
-        }
+        contents: [{ role: 'user', parts: [{ text: `${SYSTEM_INSTRUCTION}\n\nUser Question: ${userMessage}` }] }]
       });
 
+      // 3. Extract the text correctly from the new response structure
       const botResponse = response.text || "I'm sorry, I couldn't process that.";
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
-      setMessages(prev => [...prev, { role: 'bot', content: "Sorry, I'm having trouble connecting. Check the console for details." }]);
+      setMessages(prev => [...prev, { role: 'bot', content: "I'm having trouble connecting to the brain. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +77,7 @@ export default function AIChat() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'}`}>{msg.content}</div>
+                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100 text-gray-800'}`}>{msg.content}</div>
                 </div>
               ))}
               {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600 mx-auto" />}
