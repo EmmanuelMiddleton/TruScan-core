@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai"; // Matched to your package.json
+import { GoogleGenAI } from "@google/genai";
 
 // Custom WhatsApp Icon Component
 const WhatsAppIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -22,7 +22,17 @@ interface Message {
 
 const SYSTEM_INSTRUCTION = `
 You are the TruScan Systems AI Assistant. Your goal is to help users understand our services and how we can automate their workflows.
-Key Information: WhatsApp-first, POPIA compliant, South Africa based. hello@truscan.co.za.
+
+Key Information about TruScan Systems:
+- We build bespoke workflow automation and API integrations for South African enterprises and individuals.
+- We are "WhatsApp-first": Users can trigger automations, receive reports, and manage operations directly from WhatsApp.
+- We are POPIA compliant and locally built in South Africa.
+- Services include: Legacy Integration, Data Pipelines, Process Optimisation, WhatsApp Bots, and Invoice Automation.
+- Who we serve: Logistics & Supply Chain, Real Estate & Property, Professional Services, and E-commerce.
+- Partner Program: We have a partner portal where agents can earn commissions by referring clients.
+- Contact: hello@truscan.co.za or via WhatsApp at +27 68 109 0885.
+
+Be helpful, professional, and concise. Use a friendly tone. If you don't know something, suggest they contact us directly.
 `;
 
 export default function AIChat() {
@@ -34,11 +44,16 @@ export default function AIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
+  const handleSend = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
@@ -51,24 +66,24 @@ export default function AIChat() {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
       
       if (!apiKey) {
-        throw new Error('Gemini API key is missing.');
+        throw new Error('Gemini API key is missing. Please check your environment variables.');
       }
 
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
+      const genAI = new GoogleGenAI({ apiKey });
+      const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          temperature: 0.7,
-        }
+        systemInstruction: SYSTEM_INSTRUCTION 
       });
 
-      const botResponse = response.text || "I'm sorry, I couldn't process that.";
+      const result = await model.generateContent(userMessage);
+      const response = await result.response;
+      const botResponse = response.text() || "I'm sorry, I couldn't process that. Please try again or contact us directly.";
+      
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
-      setMessages(prev => [...prev, { role: 'bot', content: "Sorry, I'm having trouble connecting right now." }]);
+      const errorMessage = "Sorry, I'm having trouble connecting right now. Please try again later.";
+      setMessages(prev => [...prev, { role: 'bot', content: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
@@ -78,13 +93,33 @@ export default function AIChat() {
     <>
       {/* Floating Buttons */}
       <div className="fixed bottom-8 right-8 z-[100] flex items-center gap-4">
+        {/* WhatsApp Button */}
+        <motion.a
+          href="https://wa.me/27681090885"
+          target="_blank"
+          rel="noreferrer"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
+        >
+          <WhatsAppIcon className="w-8 h-8" />
+          <span className="absolute bottom-20 right-0 bg-white border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+            Chat on WhatsApp
+          </span>
+        </motion.a>
+
+        {/* AI Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center relative"
+          className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
         >
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#25D366] rounded-full border-2 border-white animate-pulse" />
           <Sparkles className="w-8 h-8" />
+          <span className="absolute bottom-20 right-0 bg-white border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+            Ask TruScan AI
+          </span>
         </motion.button>
       </div>
 
@@ -92,44 +127,82 @@ export default function AIChat() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] max-h-[calc(100vh-140px)] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex justify-between">
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Bot className="w-6 h-6" />
-                <span className="font-bold">TruScan AI</span>
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">TruScan AI</h3>
+                  <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Online Assistant</p>
+                </div>
               </div>
-              <button onClick={() => setIsOpen(false)}><X className="w-5 h-5" /></button>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'}`}>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={i}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
+                  }`}>
                     {msg.content}
                   </div>
-                </div>
+                </motion.div>
               ))}
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-tl-none">
+                    <Loader2 className="w-4 h-4 animate-spin text-green-500" />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 bg-white border-t">
-              <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+            {/* Input */}
+            <div className="p-4 bg-white border-t border-gray-200">
+              <form 
+                onSubmit={handleSend}
+                className="flex gap-2"
+              >
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask something..."
-                  className="flex-1 bg-gray-100 border rounded-xl px-4 py-2 text-sm focus:outline-none"
+                  placeholder="Type your message..."
+                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-green-500 transition-colors"
                 />
-                <button type="submit" className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center">
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50"
+                >
                   <Send className="w-4 h-4" />
                 </button>
               </form>
+              <p className="text-[9px] text-center text-gray-400 mt-3 uppercase tracking-widest font-bold">
+                Powered by TruScan Intelligence
+              </p>
             </div>
           </motion.div>
         )}
