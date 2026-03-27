@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Send, Bot, User, Loader2, MessageSquare, Sparkles } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Custom WhatsApp Icon Component
 const WhatsAppIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -61,23 +61,23 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
+      // VITE FIX: Use import.meta.env and the VITE_ prefix
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      
       if (!apiKey) {
-        throw new Error('Gemini API key is missing. Please check your environment variables.');
+        throw new Error('Gemini API key is missing. Please check your Vercel Environment Variables.');
       }
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          { role: 'user', parts: [{ text: userMessage }] }
-        ],
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          temperature: 0.7,
-        }
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: SYSTEM_INSTRUCTION 
       });
 
-      const botResponse = response.text || "I'm sorry, I couldn't process that. Please try again or contact us directly.";
+      const result = await model.generateContent(userMessage);
+      const response = await result.response;
+      const botResponse = response.text() || "I'm sorry, I couldn't process that. Please try again or contact us directly.";
+      
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
@@ -101,10 +101,10 @@ export default function AIChat() {
           rel="noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="w-16 h-16 bg-brand-wa text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
+          className="w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
         >
           <WhatsAppIcon className="w-8 h-8" />
-          <span className="absolute bottom-20 right-0 bg-brand-surface border border-brand-border px-4 py-2 rounded-xl text-xs font-bold text-brand-text opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+          <span className="absolute bottom-20 right-0 bg-white border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
             Chat on WhatsApp
           </span>
         </motion.a>
@@ -114,11 +114,11 @@ export default function AIChat() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="w-16 h-16 bg-gradient-to-br from-brand-blue to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
+          className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all group relative"
         >
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-brand-wa rounded-full border-2 border-white animate-pulse" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#25D366] rounded-full border-2 border-white animate-pulse" />
           <Sparkles className="w-8 h-8" />
-          <span className="absolute bottom-20 right-0 bg-brand-surface border border-brand-border px-4 py-2 rounded-xl text-xs font-bold text-brand-text opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+          <span className="absolute bottom-20 right-0 bg-white border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
             Ask TruScan AI
           </span>
         </motion.button>
@@ -131,10 +131,10 @@ export default function AIChat() {
             initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] max-h-[calc(100vh-140px)] bg-brand-surface border border-brand-border rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] max-h-[calc(100vh-140px)] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-6 bg-gradient-to-r from-brand-blue to-purple-600 text-white flex items-center justify-between">
+            <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                   <Bot className="w-6 h-6" />
@@ -153,7 +153,7 @@ export default function AIChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-brand-bg/50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
               {messages.map((msg, i) => (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -163,8 +163,8 @@ export default function AIChat() {
                 >
                   <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${
                     msg.role === 'user' 
-                      ? 'bg-brand-blue text-white rounded-tr-none' 
-                      : 'bg-brand-surface border border-brand-border text-brand-text rounded-tl-none'
+                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
                   }`}>
                     {msg.content}
                   </div>
@@ -172,8 +172,8 @@ export default function AIChat() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-brand-surface border border-brand-border p-4 rounded-2xl rounded-tl-none">
-                    <Loader2 className="w-4 h-4 animate-spin text-brand-wa" />
+                  <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-tl-none">
+                    <Loader2 className="w-4 h-4 animate-spin text-green-500" />
                   </div>
                 </div>
               )}
@@ -181,7 +181,7 @@ export default function AIChat() {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-brand-surface border-t border-brand-border">
+            <div className="p-4 bg-white border-t border-gray-200">
               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                 className="flex gap-2"
@@ -191,17 +191,17 @@ export default function AIChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 bg-brand-bg border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-wa transition-colors"
+                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-green-500 transition-colors"
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}
-                  className="w-10 h-10 bg-brand-blue text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50"
+                  className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </form>
-              <p className="text-[9px] text-center text-brand-muted mt-3 uppercase tracking-widest font-bold">
+              <p className="text-[9px] text-center text-gray-400 mt-3 uppercase tracking-widest font-bold">
                 Powered by TruScan Intelligence
               </p>
             </div>
