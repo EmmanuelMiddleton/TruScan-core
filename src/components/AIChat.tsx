@@ -48,18 +48,12 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      // Vite requires 'import.meta.env' to read Vercel environment variables
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      // HARD-CODED KEY: Bypassing environment variable issues
+      const apiKey = "AIzaSyAYomPCtn47LPEchu068E2j4YQk983sN2o";
       
-      if (!apiKey) {
-        throw new Error("API Key is missing from the environment.");
-      }
-
-      // Initialize GoogleGenAI with the key directly (standard for @google/genai)
       const genAI = new GoogleGenAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      // Build the prompt with instructions included
       const prompt = `${SYSTEM_INSTRUCTION}\n\nUser: ${userMessage}`;
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -68,8 +62,7 @@ export default function AIChat() {
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
-      // Displaying a helpful error for debugging
-      setMessages(prev => [...prev, { role: 'bot', content: `Sorry, I'm having trouble: ${error.message}` }]);
+      setMessages(prev => [...prev, { role: 'bot', content: "Sorry, I'm having trouble connecting right now. Please try again later." }]);
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +101,7 @@ export default function AIChat() {
             className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex justify-between items-center">
+            <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex justify-between items-center shadow-lg">
               <div className="flex items-center gap-3">
                 <Bot className="w-6 h-6" />
                 <span className="font-bold text-sm">TruScan AI</span>
@@ -125,13 +118,19 @@ export default function AIChat() {
                   <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${
                     msg.role === 'user' 
                       ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-white border text-gray-800 rounded-tl-none shadow-sm'
+                      : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
                   }`}>
                     {msg.content}
                   </div>
                 </div>
               ))}
-              {isLoading && <Loader2 className="w-5 h-5 animate-spin text-blue-600 mx-auto" />}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-tl-none shadow-sm">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -143,7 +142,7 @@ export default function AIChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about automation..."
-                  className="flex-1 bg-gray-100 border border-transparent rounded-xl px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="flex-1 bg-gray-100 border-none rounded-xl px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
                 <button
                   type="submit"
@@ -153,6 +152,9 @@ export default function AIChat() {
                   <Send className="w-4 h-4" />
                 </button>
               </form>
+              <p className="text-[9px] text-center text-gray-400 mt-2 font-medium tracking-wide">
+                TRUSCAN SYSTEMS AI UNIT
+              </p>
             </div>
           </motion.div>
         )}
