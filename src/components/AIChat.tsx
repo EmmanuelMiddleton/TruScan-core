@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
-// Correct import for the package in your package.json
+// This matches your package.json precisely
 import { GoogleGenAI } from "@google/genai";
 
 const WhatsAppIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -15,20 +15,16 @@ interface Message {
   content: string;
 }
 
-const SYSTEM_INSTRUCTION = "You are the TruScan Systems AI Assistant. Help users understand our workflow automation and API integrations in South Africa. We are WhatsApp-first and POPIA compliant. hello@truscan.co.za.";
+const SYSTEM_INSTRUCTION = "You are the TruScan Systems AI Assistant. Help users understand our bespoke workflow automation and API integrations in South Africa. hello@truscan.co.za.";
 
 export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', content: "Hi! I'm the TruScan AI. How can I help you automate your business today?" }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{ role: 'bot', content: "Hi! I'm the TruScan AI. How can I help you today?" }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -40,20 +36,23 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      // 1. Initialize the new Client object correctly for @google/genai
+      // 1. Unified SDK Initialization (Stateless)
       const ai = new GoogleGenAI({ apiKey: "AIzaSyAYomPCtn47LPEchu068E2j4YQk983sN2o" });
 
-      // 2. Call generateContent using the stateless models object
+      // 2. Stateless content generation (No getGenerativeModel)
       const response = await ai.models.generateContent({
         model: "gemini-1.5-flash",
-        contents: [{ role: 'user', parts: [{ text: `${SYSTEM_INSTRUCTION}\n\nUser Question: ${userMessage}` }] }]
+        contents: [{ 
+          role: 'user', 
+          parts: [{ text: `${SYSTEM_INSTRUCTION}\n\nUser Question: ${userMessage}` }] 
+        }]
       });
 
-      // 3. Extract the text correctly from the new response structure
+      // 3. New accessor for text (Stateless response object)
       const botResponse = response.text || "I'm sorry, I couldn't process that.";
       setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     } catch (error: any) {
-      console.error('AI Chat Error:', error);
+      console.error('Unified SDK Error:', error);
       setMessages(prev => [...prev, { role: 'bot', content: "I'm having trouble connecting to the brain. Please try again." }]);
     } finally {
       setIsLoading(false);
@@ -63,32 +62,30 @@ export default function AIChat() {
   return (
     <>
       <div className="fixed bottom-8 right-8 z-[100] flex items-center gap-4">
-        <motion.a href="https://wa.me/27681090885" target="_blank" rel="noreferrer" whileHover={{ scale: 1.05 }} className="w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center relative hover:opacity-90 transition-all"><WhatsAppIcon className="w-8 h-8" /></motion.a>
-        <motion.button whileHover={{ scale: 1.05 }} onClick={() => setIsOpen(true)} className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center relative hover:opacity-90 transition-all"><Sparkles className="w-8 h-8" /></motion.button>
+        <motion.a href="https://wa.me/27681090885" target="_blank" className="w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all"><WhatsAppIcon className="w-8 h-8" /></motion.a>
+        <motion.button onClick={() => setIsOpen(true)} className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:opacity-90 transition-all"><Sparkles className="w-8 h-8" /></motion.button>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-28 right-8 z-[101] w-[90vw] md:w-[400px] h-[600px] bg-white border border-gray-200 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
             <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex justify-between items-center">
-              <div className="flex items-center gap-3"><Bot className="w-6 h-6" /><span className="font-bold text-sm">TruScan AI</span></div>
+              <span className="font-bold">TruScan AI</span>
               <button onClick={() => setIsOpen(false)}><X className="w-5 h-5" /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 text-sm">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100 text-gray-800'}`}>{msg.content}</div>
+                  <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'}`}>{msg.content}</div>
                 </div>
               ))}
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600 mx-auto" />}
+              {isLoading && <Loader2 className="w-5 h-5 animate-spin text-blue-600 mx-auto" />}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-4 bg-white border-t border-gray-200">
-              <form onSubmit={handleSend} className="flex gap-2">
-                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type your message..." className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none" />
-                <button type="submit" disabled={!input.trim() || isLoading} className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center"><Send className="w-4 h-4" /></button>
-              </form>
-            </div>
+            <form onSubmit={handleSend} className="p-4 bg-white border-t flex gap-2">
+              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none" />
+              <button type="submit" disabled={!input.trim() || isLoading} className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center"><Send className="w-4 h-4" /></button>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>
