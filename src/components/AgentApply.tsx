@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
   ArrowLeft, 
@@ -8,10 +8,11 @@ import {
   Shield, 
   Globe, 
   Users, 
-  MessageSquare,
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+// Ensure this path matches your project structure
+import { supabase } from '../lib/supabase'; 
 
 export default function AgentApply() {
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -20,25 +21,32 @@ export default function AgentApply() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormStatus('submitting');
+    
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData);
 
     try {
-      const res = await fetch('/api/partner-apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      
-      if (res.ok) {
-        setFormStatus('success');
-      } else {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to submit application.');
-      }
+      // Direct Insert into Supabase
+      // Note: Ensure your Supabase table columns match these keys
+      const { error } = await supabase
+        .from('partners') 
+        .insert([
+          { 
+            full_name: data.name, 
+            email: data.email, 
+            whatsapp: data.whatsapp,
+            experience: data.experience,
+            created_at: new Date().toISOString()
+          }
+        ]);
+
+      if (error) throw error;
+
+      setFormStatus('success');
     } catch (err: any) {
       console.error('Application error:', err);
-      setErrorMessage(err.message || 'Something went wrong. Please try again.');
+      // Provides a clear error message from Supabase if RLS or Schema fails
+      setErrorMessage(err.message || 'Failed to submit. Please check your connection.');
       setFormStatus('error');
     }
   };
@@ -72,7 +80,6 @@ export default function AgentApply() {
 
   return (
     <div className="min-h-screen bg-brand-bg font-sans text-brand-text selection:bg-brand-blue/20">
-      {/* Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(37,99,235,0.05)_0%,transparent_70%)]"></div>
       </div>
@@ -217,7 +224,7 @@ export default function AgentApply() {
           </form>
 
           <p className="mt-8 text-[10px] text-center text-brand-muted leading-relaxed">
-            By submitting this application, you agree to our <button type="button" className="underline">Privacy Policy</button> and <button type="button" className="underline">Terms of Service</button>. We process all data in compliance with POPIA.
+            By submitting this application, you agree to our <button type="button" className="underline">Privacy Policy</button> and <button type="button" className="underline">Terms of Service</button>.
           </p>
         </motion.div>
       </main>
