@@ -62,11 +62,10 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      // VITE FIX: Use import.meta.env
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
       
       if (!apiKey) {
-        throw new Error('Gemini API key is missing. Please check your environment variables.');
+        throw new Error('Gemini API key is missing.');
       }
 
       const genAI = new GoogleGenAI({ apiKey });
@@ -179,7 +178,7 @@ export default function AIChat() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
+            {/* Input - FIXED COLORS HERE */}
             <div className="p-4 bg-white border-t border-gray-200">
               <form 
                 onSubmit={handleSend}
@@ -190,7 +189,7 @@ export default function AIChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-green-500 transition-colors"
+                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-green-500 transition-colors"
                 />
                 <button
                   type="submit"
