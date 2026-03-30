@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, 
@@ -115,9 +115,6 @@ export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'retail' | 'logistics' | 'finance' | 'realestate'>('all');
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; type: keyof typeof LEGAL_CONTENT | null }>({ isOpen: false, type: null });
-  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [partnerFormStatus, setPartnerFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
   const [agentId, setAgentId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
@@ -137,49 +134,6 @@ export default function LandingPage() {
     }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const consent = formData.get('wa_consent');
-
-    if (!consent) {
-      setErrorMessage('Please confirm your consent to receive WhatsApp updates.');
-      setFormStatus('error');
-      return;
-    }
-
-    setFormStatus('submitting');
-    
-    const data = {
-      name: formData.get('full_name') as string,
-      email: formData.get('contact_number') as string,
-      whatsapp: formData.get('whatsapp_number') as string,
-      service: formData.get('entry_category') as string,
-      message: formData.get('primary_bottleneck') as string,
-      consent: true,
-      agentId: agentId
-    };
-
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to submit request.');
-      }
-      
-      setFormStatus('success');
-    } catch (err: any) {
-      console.error('Submission error:', err);
-      setErrorMessage(err.message || 'Something went wrong. Please try again.');
-      setFormStatus('error');
-    }
-  };
 
   return (
     <div className="min-h-screen font-sans selection:bg-brand-wa/20 overflow-x-hidden bg-brand-bg text-brand-text">
@@ -422,35 +376,20 @@ export default function LandingPage() {
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter font-display mb-6">Partner with Us</h2>
           <p className="text-brand-muted mb-10">Refer businesses and earn recurring commissions.</p>
           
-          {partnerFormStatus === 'success' ? (
-            <div className="bg-brand-surface border border-brand-wa/20 p-8 rounded-3xl">
-              <Check className="w-10 h-10 text-brand-wa mx-auto mb-4" />
-              <p className="font-bold">Application Received!</p>
-            </div>
-          ) : (
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              setPartnerFormStatus('submitting');
-              const formData = new FormData(e.currentTarget);
-              try {
-                const res = await fetch('/api/partner-apply', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(Object.fromEntries(formData))
-                });
-                if (res.ok) setPartnerFormStatus('success');
-                else setPartnerFormStatus('error');
-              } catch { setPartnerFormStatus('error'); }
-            }} className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-              <input required name="name" placeholder="Full Name" className="bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue" />
-              <input required name="email" type="email" placeholder="Email Address" className="bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue" />
-              <input required name="whatsapp" placeholder="WhatsApp Number" className="bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-wa" />
-              <textarea required name="experience" placeholder="Tell us about your experience..." className="sm:col-span-2 bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue resize-none" rows={3} />
-              <button type="submit" disabled={partnerFormStatus === 'submitting'} className="sm:col-span-2 bg-brand-blue text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-brand-blue-light transition-all">
-                {partnerFormStatus === 'submitting' ? 'Submitting...' : 'Apply to Partner'}
-              </button>
-            </form>
-          )}
+          <div className="flex flex-col items-center gap-6">
+            <a 
+              href="https://wa.me/27716856449?text=Hi%20TruScan,%20I'm%20interested%20in%20joining%20the%20Partner%20Program."
+              target="_blank"
+              rel="noreferrer"
+              className="bg-brand-wa text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm hover:opacity-90 transition-all shadow-xl shadow-brand-wa/20 flex items-center gap-3"
+            >
+              <WhatsAppIcon className="w-6 h-6" />
+              Apply via WhatsApp
+            </a>
+            <p className="text-xs text-brand-muted max-w-sm">
+              Click the button above to start your application directly on WhatsApp. Our team will guide you through the process.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -463,36 +402,27 @@ export default function LandingPage() {
               <p className="text-brand-muted mb-8">Tell us about your bottleneck. We'll reach out on WhatsApp.</p>
               <div className="flex items-center justify-center lg:justify-start gap-4 text-brand-wa font-bold">
                 <WhatsAppIcon className="w-6 h-6" />
-                <span>+27 68 109 0885</span>
+                <span>+27 71 685 6449</span>
               </div>
             </div>
 
-            <div className="bg-brand-surface border border-brand-border p-8 rounded-3xl shadow-xl max-w-xl mx-auto lg:mx-0 w-full">
-              {formStatus === 'success' ? (
-                <div className="text-center py-8">
-                  <Check className="w-12 h-12 text-brand-wa mx-auto mb-4" />
-                  <p className="font-bold">Request Sent!</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <input required name="full_name" placeholder="Name / Company" className="w-full bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue" />
-                  <input required name="whatsapp_number" placeholder="WhatsApp Number" className="w-full bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-wa" />
-                  <select required name="entry_category" defaultValue="" className="w-full bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue">
-                    <option value="" disabled>Select Workflow</option>
-                    <option value="legacy">Legacy Integration</option>
-                    <option value="pipeline">Data Pipeline</option>
-                    <option value="ai">WhatsApp Bot</option>
-                  </select>
-                  <textarea name="primary_bottleneck" rows={3} placeholder="Describe your bottleneck..." className="w-full bg-brand-bg border border-brand-border rounded-xl px-6 py-4 text-sm outline-none focus:border-brand-blue resize-none" />
-                  <div className="flex gap-3 items-start">
-                    <input type="checkbox" name="wa_consent" id="wa_consent" className="mt-1" />
-                    <label htmlFor="wa_consent" className="text-[10px] text-brand-muted">I consent to WhatsApp updates. <button type="button" onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })} className="underline">Privacy Policy</button></label>
-                  </div>
-                  <button type="submit" disabled={formStatus === 'submitting'} className="w-full bg-brand-blue text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-brand-blue-light transition-all">
-                    {formStatus === 'submitting' ? 'Submitting...' : 'Send Request'}
-                  </button>
-                </form>
-              )}
+            <div className="bg-brand-surface border border-brand-border p-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-brand-blue/10 text-brand-blue rounded-3xl flex items-center justify-center mb-8">
+                <Zap className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-black tracking-tighter font-display mb-4">Start Your Automation</h3>
+              <p className="text-brand-muted mb-10 leading-relaxed">
+                Skip the forms. Chat with us directly on WhatsApp to discuss your business bottlenecks and get a custom quote.
+              </p>
+              <a 
+                href="https://wa.me/27716856449?text=Hi%20TruScan,%20I'd%20like%20to%20automate%20my%20business%20workflow."
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-brand-wa text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:opacity-90 transition-all shadow-xl shadow-brand-wa/20 flex items-center justify-center gap-3"
+              >
+                <WhatsAppIcon className="w-5 h-5" />
+                Chat with an Expert
+              </a>
             </div>
           </div>
         </div>
@@ -523,7 +453,7 @@ export default function LandingPage() {
               <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-text mb-8">Contact</h4>
               <ul className="space-y-4 text-xs text-brand-muted">
                 <li><a href="mailto:hello@truscan.co.za" className="hover:text-brand-wa transition-colors">hello@truscan.co.za</a></li>
-                <li><a href="https://wa.me/27681090885" className="hover:text-brand-wa transition-colors">WhatsApp Support</a></li>
+                <li><a href="https://wa.me/27716856449" className="hover:text-brand-wa transition-colors">WhatsApp Support</a></li>
                 <li className="pt-4 flex gap-4">
                   <a href="/admin" className="text-[9px] uppercase tracking-widest font-bold text-brand-muted-2 hover:text-brand-text">Admin</a>
                   <a href="/dashboard" className="text-[9px] uppercase tracking-widest font-bold text-brand-muted-2 hover:text-brand-text">Partner</a>
